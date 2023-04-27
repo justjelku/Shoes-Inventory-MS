@@ -1,0 +1,54 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+  
+    // // Allow read access to authenticated users only
+    // match /users/{userId} {
+    //   allow read: if request.auth.uid != null && request.auth.uid == userId;
+    //   allow write: if request.auth.uid != null && request.auth.uid == userId;
+    // }
+    
+    // Allow read and write access to all collections for specific super admin user.
+    match /{document=**} {
+      allow read, write: if request.auth.token.super_admin == true && request.auth.token.email == 'adminje1@gmail.com';
+    }
+    
+    // Allow read and write access to all collections for super admin users.
+    match /{document=**} {
+      allow read, write: if request.auth.token.super_admin == true;
+    }
+    
+    match /{document=**} {
+      allow read, write: if request.auth.token.role == 'superadmin';
+    }
+    
+    // Allow everyone to create a new user document in the users collection
+    match /users/{userId}/basic_users/{document=**} {
+      allow create: if true;
+    }
+    
+    // Allow everyone to create a new user document in the users collection
+    match /users/{userId}/admin_users/{document=**} {
+      allow create: if true;
+    }
+    
+    /// Only allow registered basic users to read and write to basic_users subcollection
+    match /users/{userId}/basic_users/{document=**} {
+      // allow read, write: if request.auth != null && exists(/databases/$(database)/documents/users/$(userId)/basic_users/$(request.auth.uid));
+    	allow read, write: if true;
+    }
+
+    // Only allow registered admin users to read and write to admin_users subcollection
+    match /users/{userId}/admin_users/{document=**} {
+      allow read, write: if request.auth != null && exists(/databases/$(database)/documents/users/$(userId)/admin_users/$(request.auth.uid));
+    }
+    
+    // Allow read access to any todo collection for admin users
+    match /users/{uid}/basic_users/{basicUserId}/todo/{todoId} {
+      allow read, write: if request.auth.token.admin == true;
+    }
+   	match /users/{uid}/basic_users/{basicUserId} {
+  		allow read, write: if true;
+		}
+  }
+}
